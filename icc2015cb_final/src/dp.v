@@ -16,23 +16,22 @@ module dp(
   output reg                [4:0] image_out_index
 );
 
-  // Other
-  reg                 [4:0] image_index_buf [0:34];
-  wire                [4:0] in_idx = image_index_buf[34]; // Delay 31 cycle
+  // Input shifter
+  reg                 [4:0] image_index_buf [0:4];
+  wire                [4:0] in_idx = image_index_buf[4]; // Delay 4 cycle
   integer in_buf_idx;
   always @(posedge clk, posedge reset) begin
     if(reset) begin
-      for(in_buf_idx=0; in_buf_idx <=34; in_buf_idx =in_buf_idx+1) begin: in_mage_index_buf_rst
+      for(in_buf_idx=0; in_buf_idx <=4; in_buf_idx =in_buf_idx+1) begin: in_mage_index_buf_rst
         image_index_buf[in_buf_idx] <= 5'h0;
       end
     end else begin
       image_index_buf[0] <= image_in_index;
-      for(in_buf_idx=0; in_buf_idx < 34; in_buf_idx=in_buf_idx+1) begin: in_mage_index_buf_shift
+      for(in_buf_idx=0; in_buf_idx < 4; in_buf_idx=in_buf_idx+1) begin: in_mage_index_buf_shift
         image_index_buf[in_buf_idx + 1] <= image_index_buf[in_buf_idx];
       end
     end
   end
-
 
   // S_READ
   wire                [7:0] r = pixel_in [23:16];
@@ -91,6 +90,7 @@ module dp(
         out_valid <= 1'b0;
       end else if (cmd_flags[`CMD_OUT]) begin
         if(cnt >= 0 && cnt <= 31) begin
+          // out_valid
           out_valid <= 1'b1;
           // color_index
           color_index <= sorted_rank[out_idx][6:5];
@@ -181,10 +181,6 @@ module dp(
             sorted_rank[m] <= sorted_rank[m];
           end
         end 
-      end else begin
-        for(n=0; n<=31; n=n+1) begin: sorted_rank_hold_2
-          sorted_rank[n] <= sorted_rank[n];
-        end
       end
     end
 
@@ -241,10 +237,6 @@ module dp(
             img_rank[p] <= 0;
           end
         end
-      end else begin
-        for(j=0; j<=31; j=j+1) begin: img_rank_hold_2
-          img_rank[j] <= img_rank[j]; 
-        end
       end
     end
 
@@ -266,7 +258,7 @@ module dp(
       if(reset) begin
         r_cnt <= 15'h0000; g_cnt <= 15'h0000; b_cnt <= 15'h0000;
         r_psum <= {`PSUM_W{1'b0}}; g_psum <= {`PSUM_W{1'b0}}; b_psum <= {`PSUM_W{1'b0}};
-      end else begin 
+      end else begin
         case({cnt_rst, cmd_flags[`CMD_READ]})
           // CMD_READ
           2'b01: begin

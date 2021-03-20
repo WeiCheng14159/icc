@@ -106,7 +106,7 @@ module ctrl(
        end
      endcase
 
-     // Reset condition
+      // Reset condition
        if(reset) begin
          next_state[`S_INIT] = 1'b1;
        end
@@ -121,7 +121,7 @@ module ctrl(
 
     case (1'b1) // synopsys parallel_case
 
-     // INIT state
+      // INIT state
       curr_state[`S_INIT]: begin
         cmd_flags[`CMD_INIT] = 1'b1;
       end
