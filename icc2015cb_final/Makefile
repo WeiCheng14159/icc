@@ -16,7 +16,7 @@ SRC=$(shell ls $(SRC_DIR)/*.v)
 
 TB_SRC=$(SIM_DIR)/in_pattern3.dat $(SIM_DIR)/out_golden3.dat
 
-.PHONY: default init check rtl nw sv syn autosyn post post_sv clean gen_def
+.PHONY: default init check rtl nw sv syn syn_init autosyn post post_sv clean gen_def
 
 # Show available all command
 default:
@@ -37,6 +37,10 @@ $(BUILD):
 # Create folders
 init: clean
 	mkdir -p $(BUILD_DIR) $(SYN_DIR) $(REPORT_DIR)
+
+# Syn directory init
+syn_init:
+	mkdir -p $(SYN_DIR)
 
 # Generate header
 gen_def:
@@ -72,19 +76,19 @@ sv: $(BUILD)
 	simvision -64bit -waves -input $(SV_DIR)/rtl.sv &
 
 # Run synthesize with Design Compiler
-syn: $(BUILD)
+syn: $(BUILD) syn_init
 	cd $(BUILD_DIR); \
 	cp $(SCRIPT_DIR)/synopsys_dc.setup $(BUILD_DIR)/.synopsys_dc.setup; \
 	dcnxt_shell -f $(SCRIPT_DIR)/synthesize.tcl;
 
 # Auto run synthesize with Design Compiler
-autosyn: $(BUILD)
+autosyn: $(BUILD) syn_init
 	cd $(BUILD_DIR); \
 	cp $(SCRIPT_DIR)/synopsys_dc.setup $(BUILD_DIR)/.synopsys_dc.setup; \
 	nohup dcnxt_shell -f $(SCRIPT_DIR)/synthesize.tcl &> $(ROOT_DIR)/nohup.log &
 
 # Run gate-level simulation (nWave)
-post: $(BUILD) cp_tb_src
+post: $(BUILD) cp_tb_src syn_init
 	cd $(BUILD_DIR); \
 	cp $(SYN_DIR)/$(TOP)_syn.sdf $(BUILD_DIR); \
 	ncverilog +ncmaxdelays $(SIM_DIR)/$(TB_TOP).v $(SYN_DIR)/$(TOP)_syn.v -v $(SIM_DIR)/tsmc18_neg.v \
@@ -99,6 +103,11 @@ post: $(BUILD) cp_tb_src
 post_sv: $(BUILD)
 	cd $(BUILD_DIR); \
 	simvision -64bit -waves -input $(SV_DIR)/post.sv &
+
+# Run ICC APR flow
+apr: syn_init
+	cp $(SYN_DIR)/$(TOP)_syn.v $(APR_DIR)/design_data/CHIP_syn.v
+		cp $(SCRIPT_DIR)/$(TOP)_APR.sdc $(APR_DIR)/design_data/CHIP.sdc
 
 # Remove all files
 clean:
