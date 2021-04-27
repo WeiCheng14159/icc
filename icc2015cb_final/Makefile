@@ -91,7 +91,7 @@ autosyn: $(BUILD) syn_init
 post: $(BUILD) cp_tb_src syn_init
 	cd $(BUILD_DIR); \
 	cp $(SYN_DIR)/$(TOP)_syn.sdf $(BUILD_DIR); \
-	ncverilog +ncmaxdelays $(SIM_DIR)/$(TB_TOP).v $(SYN_DIR)/$(TOP)_syn.v -v $(SIM_DIR)/tsmc18_neg.v \
+	ncverilog +ncmaxdelays $(SIM_DIR)/$(TB_TOP).v $(SYN_DIR)/$(TOP)_syn.v -v $(SIM_DIR)/tsmc13_neg.v \
 	+nc64bit \
 	+access+r \
 	+define+SHM_FILE=\"$(TOP).shm\" \
