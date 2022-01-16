@@ -1,0 +1,1 @@
+vcs "-R" "+v2k" "testfixture.v" "S1.v" "S2.v" "+define+tb2+FSDB" "-P" "/usr/cad/spring_soft/verdi/cur/share/PLI/vcs_latest/LINUX/verdi.tab" "/usr/cad/spring_soft/verdi/cur/share/PLI/vcs_latest/LINUX/pli.a"
