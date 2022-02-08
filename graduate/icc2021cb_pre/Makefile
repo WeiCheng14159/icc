@@ -12,7 +12,7 @@ NC_DIR             =$(ROOT_DIR)/conf/nWave_conf
 TB_TOP             =testfixture
 TOP                =geofence
 
-SRC=$(shell ls $(SRC_DIR)/*.v)
+SRC=$(shell ls $(SRC_DIR)/*.v $(SRC_DIR)/*.sv)
 
 TB_SRC=$(SIM_DIR)/grad.data
 

@@ -39,7 +39,7 @@ initial begin
     $shm_probe("ASM");
     
     $fsdbDumpfile("geofence.fsdb");
-    $fsdbDumpvars();
+    $fsdbDumpvars("+all");
     $fsdbDumpMDA;
 end
 

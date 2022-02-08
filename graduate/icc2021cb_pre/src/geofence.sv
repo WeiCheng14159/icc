@@ -1,14 +1,15 @@
 `include "def.v"
-`include "DW_sqrt.v"
 
-`define DIRECTION(a,b) ((a.x>b.y)^(b.x>a.y))
+`define VECTOR(a,xy) $signed({11'd0,point[a].xy}-point[0].xy)
+`define CROSS_PRODUCT(i,j) (`VECTOR(i,x)*`VECTOR(j,y)<`VECTOR(j,x)*`VECTOR(i,y))
 `define DET(a,b) ({11'd0,a.x}*b.y-{11'd0,b.x}*a.y)
 `define ABS(a,b) ((a>b)? (a-b):(b-a))
 `define RELU(a,b) ((a>b)? (a-b):0)
-`define SQUARE(a) ({10'd0,a}*a)
-`define DISTANCE(a,b) (`SQUARE(`ABS(point[a].x,point[b].x))+`SQUARE(`ABS(point[a].y,point[b].y)));
+`define SQUARE(a) ({10'd0,a}*{a})
+`define DISTANCE(a,b) ({1'd0,`SQUARE(`ABS(point[a].x,point[b].x))}+`SQUARE(`ABS(point[a].y,point[b].y)))
+`define DIV2(a) ((a+a[0])>>1)
 
-`define THRESHHOLD 25
+`define THRESHHOLD 50
 
 module geofence ( clk,reset,X,Y,R,valid,is_inside);
 input clk;
@@ -20,126 +21,135 @@ output logic valid;
 output logic is_inside;
 //reg valid;
 //reg is_inside;
-enum {GET_DATA,SORT_NODE,CALC_FENCE_AREA,CALC_EDGE,CALC_POINT_AREA_1,CALC_POINT_AREA_2} status;
+enum {GET_DATA,SORT_NODE,CALC_FENCE_AREA,CALC_EDGE,CALC_POINT_AREA_1,CALC_POINT_AREA_2,ANSWER} status;
 
-struct {
-	reg[10:0] x,y;
+struct packed{
+	reg[9:0] x,y;
 	reg[10:0] r;
-} point[6],tmp_point;
-logic [2:0] cnt,i,j;
-logic [21:0] tmp_area
-logic [15:0] fence_area,tmp,point_area;
+} point[6];
+logic [2:0] cnt,cnt2,i;
+logic [22:0] fence_area,point_area;
 logic [10:0] fence_edge;
-logic [12:0]S,S_a,S_b,S_c;
+logic [11:0]S,S_a,S_b,S_c;
 
-logic [20:0] sqrt_in;
-logic [10:0] sqrt_out;
-module DW_sqrt #(.width(21)) sqrt(sqrt_in,sqrt_out);
+logic [22:0] sqrt_in;
+logic [11:0] sqrt_out,tmp,tmp2;
+DW_sqrt #(.width(23)) sqrt(sqrt_in,sqrt_out);
 
-assign is_inside=`ABS(fence_area,point_area)<`THRESHHOLD;
 
 always_ff @(posedge clk,posedge reset) begin
 	if(reset) begin
 		status<=GET_DATA;
-		for(i=0;i<6;++i) tmp_point[i]<=0;
-		cnt<=0;
+		for(i=0;i<6;++i) point[i]<='{10'd0,10'd0,11'd0};
+		cnt<=3'd0;
+		cnt2<=3'd0;
+		fence_area<=23'd0;
+		point_area<=23'd0;
+		fence_edge<=11'd0;
+		tmp<=12'd0;
+		tmp2<=12'd0;
 		valid<=0;
-		fence_area<=0;
-		tmp<=0;
-		point_area<=0;
-		fence_edge<=0;
+		is_inside<=0;
 	end
 	else begin
 		case(status)
 			GET_DATA:begin
-				if(cnt<6) begin
-					point[cnt]<=(cnt==0)? `{X,Y,R}:`{X-point[0].x,Y-point[0].y,R};
+				valid<=0;
+				if(cnt<3'd6) begin
+					point[cnt]<='{X,Y,R};
 					cnt<=cnt+1;
 				end
 				else begin
-					point[0].x=0;
-					point[0].y=0;
 					status<=SORT_NODE;
+					cnt<=3'd1;
+					cnt2<=3'd2;
 				end
 			end
 			SORT_NODE:begin
-				for(i=1;i<6;++i) begin
-					for(j=i+1;j<6;++j) begin
-						if(`DIRECTION(point[i],point[j])) begin
-							tmp_point=point[i];
-							point[i]=point[j];
-							point[j]=tmp_point;
-						end
+				if(`CROSS_PRODUCT(cnt,cnt2)) begin
+					point[cnt]<=point[cnt2];
+					point[cnt2]<=point[cnt];
+				end
+				if(cnt2==3'd5) begin
+					cnt2<=cnt+2;
+					if(cnt==3'd4) begin
+						cnt<=3'd0;
+						status<=CALC_FENCE_AREA;
 					end
+					else cnt<=cnt+1;
 				end
-				cnt<=0;
-				status<=CALC_FENCE;
+				else cnt2<=cnt2+1;
+				fence_area<=23'd0;
 			end
-			CALC_FENCE_AREA:begin // not devided by 2 yet
-				tmp_point=`{0,0,0};
-				tmp_area=0;
-				for(i=0;i<6;++i) begin
-					case(i)
-						5:tmp_area+=`DET(point[5],point[0]);
-						default:tmp_area+=`DET(point[i],point[i+1]);
-					endcase
-					fence_area<={tmp_area[14:0],1'b0};
+			CALC_FENCE_AREA:begin 
+				if(cnt==3'd5) begin
+					status<=CALC_EDGE;
+					fence_area<=(fence_area+`DET(point[5],point[0]));
+					cnt<=3'd0;
 				end
-				status<=CALC_EDGE;
-				cnt<=0;
+				else begin
+					fence_area<=(fence_area+`DET(point[cnt],point[cnt+1]));
+					cnt<=cnt+1;
+				end
+				point_area<=23'd0;
 			end
 
-			CALC_EDGE:begin //sqrt(x^2-y^2)
+			CALC_EDGE:begin //sqrt(x^2-y^2)=c
+				point_area<=((tmp*tmp2)>>1);
 				status<=CALC_POINT_AREA_1;
 				fence_edge<=sqrt_out;
 			end
-			CALC_POINT_AREA_1:begin //sqrt(S*(S-2a))
-				status<=CALC_POINT_AREA_2;
+			CALC_POINT_AREA_1:begin //sqrt(S*(S-a))
+				if(cnt) fence_area<=`RELU(fence_area,point_area);
+				if(cnt==6) status<=ANSWER;
+				else status<=CALC_POINT_AREA_2;
 				tmp<=sqrt_out;
 			end
-			CALC_POINT_AREA_2:begin //sqrt((S-2b)*(S-2c))
+			CALC_POINT_AREA_2:begin //sqrt((S-b)*(S-c))
 				status<=CALC_EDGE;
-				point_area<=point_area+tmp*sqrt_out;
+				tmp2<=sqrt_out;
 				cnt<=cnt+1;
-				if(cnt==5) begin
-					status<=GET_DATA;
-					cnt<=0;
-				end
+				valid<=0;
+			end
+			ANSWER:begin
+				valid<=!valid;
+				is_inside<=(fence_area)? 1:0;
+				cnt<=0;
+				if(valid) status<=GET_DATA;
 			end
 		endcase
 	end
 end
-// control sqrt_in
+// control sqrt module
 always_comb begin
-	// S=a+b+c (will devide 2 after calc area)
+	// S=a+b+c;
 	// S_a=-a+b+c;
 	// S_b=a-b+c;
 	// S_c=a+b-c;
-	if(cnt==5) begin
-		S={2'd0,point[5].r}+point[0].r+fence_edge;
-		S_a=`RELU({2'd0,point[0].r}+fence_edge,point[5].r);
-		S_b=`RELU({2'd0,point[5].r}+fence_edge,point[0].r);
+	if(cnt==3'd5) begin
+		S={1'b0,fence_edge}+point[5].r+point[0].r;
+		S_a=`RELU({1'b0,fence_edge}+point[0].r,point[5].r);
+		S_b=`RELU({1'b0,fence_edge}+point[5].r,point[0].r);
 		S_c=`RELU({2'd0,point[5].r}+point[0].r,fence_edge);
 	end
 	else begin
-		S={2'd0,point[cnt].r}+point[cnt+1].r+fence_edge;
-		S_a=`RELU({2'd0,point[cnt+1].r}+fence_edge,point[cnt].r);
-		S_b=`RELU({2'd0,point[cnt].r}+fence_edge,point[cnt+1].r);
+		S={1'b0,fence_edge}+point[cnt].r+point[cnt+1].r;
+		S_a=`RELU({1'b0,fence_edge}+point[cnt+1].r,point[cnt].r);
+		S_b=`RELU({1'b0,fence_edge}+point[cnt].r,point[cnt+1].r);
 		S_c=`RELU({2'd0,point[cnt].r}+point[cnt+1].r,fence_edge);
 	end
-
 	case(status)
-		CALC_EDGE: //sqrt(x^2-y^2)
-		if(cnt==5) sqrt_in=`DISTANCE(5,0);
-		else sqrt_in=`DISTANCE(cnt,cnt+1);
-	end
-	CALC_POINT_AREA_1:begin //sqrt(S*(S-2a)) 
-		sqrt_in=S*S_a;
-	end
-	CALC_POINT_AREA_2:begin //sqrt((S-2b)*(S-2c))
-		sqrt_in=S_b*S_c;
-	end
-	default:sqrt_in=0;
-endcase
+		CALC_EDGE:begin //sqrt(x^2-y^2)=c
+			if(cnt==3'd5) sqrt_in={2'd0,`DISTANCE(5,0)};
+			else sqrt_in={2'd0,`DISTANCE(cnt,cnt+1)};
+		end
+		CALC_POINT_AREA_1:begin //sqrt(S*(S-2a)) 
+			sqrt_in={12'd0,S}*S_a;
+		end
+		CALC_POINT_AREA_2:begin //sqrt((S-2b)*(S-2c))
+			sqrt_in={12'd0,S_b}*S_c;
+		end
+		default:sqrt_in=23'd0;
+	endcase
 end
 endmodule
