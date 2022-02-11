@@ -62,10 +62,10 @@ wire [47:0] M_G, M_EXP;
   initial $sdf_annotate(`SDFFILE, u_huffman);
 `endif
 
-//initial begin
-//$fsdbDumpfile("huffman.fsdb");
-//$fsdbDumpvars;
-//end
+initial begin
+$fsdbDumpfile("huffman.fsdb");
+$fsdbDumpvars("+all");
+end
 
 
 huffman u_huffman(.clk(CLK), .reset(reset), .gray_valid(gray_valid), .gray_data(gray_data),
