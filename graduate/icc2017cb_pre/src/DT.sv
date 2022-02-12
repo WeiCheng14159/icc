@@ -16,10 +16,11 @@ module DT(
 );
 logic [13:0]core_cnt;
 logic [1:0]cnt;
+logic sync,index;
 logic [17:0][1:0]sti_tmp;
 enum {JOIN_UP,JOIN_BOTTOM,CTRL} status;
 
-assign sti_addr={core_cnt[13:9]+cnt[0] ,core_cnt[8:4]};
+assign sti_addr={core_cnt[13:9]+index ,core_cnt[8:4]+1};
 assign res_addr={core_cnt[13:7]-(status!=JOIN_UP) ,core_cnt[6:0]};
 
 /*
@@ -41,7 +42,7 @@ always_ff @(posedge clk,negedge reset) begin
 		done<=0;
 		sti_rd<=0;
 		core_cnt<=14'd128;
-		cnt<=2'b01;
+		{sync,index}<=2'b01;
 		res_wr<=0;
 		res_rd<=0;
 		res_do<=0;
@@ -58,21 +59,24 @@ always_ff @(posedge clk,negedge reset) begin
 			end
 			CTRL:begin
 				res_wr<=0;
-				if(core_cnt[6:0]==7'b1111110) begin //end col
-					if(core_cnt[13:7]==7'b1111111) done<=1;
+				if(core_cnt[3:0]==4'b1111) begin //end col of sti_tmp
+					if(core_cnt[6:4]==3'b111) begin //end col of res_reg
+						if(core_cnt[13:7]==7'b1111111) done<=1;
+						else core_cnt<={core_cnt[13:7]+1,7'd1};
+					end
 					else begin //get data
-						if(cnt==2'b11) begin
+						if(sync && index) begin
 							res_rd<=1;
-							status<=JOIN_BOTTOM;
-							core_cnt<={core_cnt[13:7]+1,7'd1};
 							sti_rd<=0;
-							cnt<=2'b01;
+							{sync,index}<=2'b01;
+							core_cnt<=core_cnt+1;
+							status<=JOIN_BOTTOM;
 						end
 						else begin
 							sti_rd<=1;
-							cnt<=cnt+1;
+							{sync,index}<={sync,index}+1;
 						end
-						if(cnt[1]) sti_tmp[cnt[0]]<={sti_tmp[1:0],sti_di};
+						if(sync) sti_tmp[index]<={sti_tmp[1:0],sti_di};
 					end
 				end
 				else core_cnt<=core_cnt+1;
