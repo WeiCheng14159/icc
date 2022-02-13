@@ -68,7 +68,7 @@ always begin #(`CYCLE/2) clk = ~clk; end
 initial begin
 	`ifdef FSDB
 		$fsdbDumpfile("DT.fsdb");
-		$fsdbDumpvars;
+		$fsdbDumpvars("+all");
 		$fsdbDumpMDA(u_sti_ROM.sti_M);
 		$fsdbDumpMDA(u_res_RAM.res_M);
 	`elsif VCD
