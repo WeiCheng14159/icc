@@ -1,4 +1,4 @@
-`define P(a,b) (sti_tmp[b][tmp_cnt+a])
+`define P(a,b) sti_tmp[b][tmp_cnt+a]
 
 module DT(
 	input 			clk, 
@@ -30,7 +30,7 @@ logic [2:0] sti_cnt;
 logic [6:0] row_cnt;
 logic req_cnt;
 logic [7:0]sti_tmp[2][18];
-enum {JOIN_UP,JOIN_BOTTOM,CTRL,END} status;
+enum {INIT,JOIN_UP,JOIN_BOTTOM,CTRL,END} status;
 int i;
 logic [7:0]tmp;
 
@@ -67,25 +67,38 @@ always_ff @(posedge clk,negedge reset) begin
 		res_rd<=0;
 		res_do<=0;
 		sti_tmp<='{default:'0};
-		status<=CTRL;
+		status<=INIT;
 	end
 	else begin
 		case(status)
 			INIT:begin
 				if(sti_rd) begin
-					for(i=2;i<18;++i) sti_tmp[1][i]<=sti_di[i];
+					for(i=2;i<18;++i) sti_tmp[1][i]<=sti_di[17-i];
+					sti_rd<=0;
+					tmp_cnt<=1;
+					status<=JOIN_UP;
+				end
+				else sti_rd<=1;
+			end
+			JOIN_UP:begin
+				if
+			end
+		endcase
+		/*
+		case(status)
+			INIT:begin
+				if(sti_rd) begin
+					for(i=2;i<18;++i) sti_tmp[1][i]<=sti_di[17-i];
 					sti_rd<=0;
 					status<=JOIN_UP;
 				end
 				else sti_rd<=1;
 			end
 			JOIN_UP:begin
-				tmp=minimum('{`P(0,1),`P(0,0),`P(1,0),`P(2,0),8'hff});
-				if(`P(1,1)) begin
-					res_wr<=1;
-					`P(1,1)<=tmp;
-				end
-				res_addr<={row_cnt,sti_cnt,tmp_cnt}+1;
+				tmp=minimum('{`P(0,1),`P(0,0),`P(1,0),`P(2,0),8'hff})+1;
+				res_wr<=`P(1,1);
+				`P(1,1)<=`P(1,1)? tmp:0;
+				res_addr<={row_cnt+1,sti_cnt,tmp_cnt}-1;
 				res_do<=tmp;
 				res_rd<=0;
 				status<=CTRL;
@@ -100,18 +113,19 @@ always_ff @(posedge clk,negedge reset) begin
 				else begin //end col of sti_tmp
 					if(last_row && sti_cnt==3'b111) status<=END;
 					else begin
-						if(res_rd) begin
-							if(sti_rd) begin
-								sti_rd<=0;
+						if(sti_rd) begin
+							if(res_rd) begin
+								res_rd<=0;
 								for(i=0;i<18;++i) sti_tmp[0][i]<=(last_row)? 0:sti_tmp[1][i];
 								sti_tmp[1][0]<=res_di;
-								for(i=2;i<18;++i) sti_tmp[1][i]<=sti_di[i];
-								res_addr<=res_addr+1;
+								for(i=2;i<18;++i) sti_tmp[1][i]<=sti_di[17-i];
+								sti_addr<=sti_cnt? {row_cnt+2,sti_cnt}-1:0;
 							end
 							else begin
-								sti_tmp[1][1]<=res_di;
+								sti_tmp[1][1]<=sti_di[0];
 								//finish request data
-								res_rd<=0;
+								sti_rd<=0;
+								tmp_cnt<=0;
 								row_cnt<=(last_row)? 0:row_cnt+1;
 								sti_cnt<=sti_cnt+last_row;
 								status<=JOIN_BOTTOM;
@@ -121,23 +135,23 @@ always_ff @(posedge clk,negedge reset) begin
 							sti_rd<=1;
 							sti_addr<=last_row? {7'd1,sti_cnt}+1:{row_cnt+2,sti_cnt};
 							res_rd<=1;
-							res_addr<=last_row? {7'd1,sti_cnt,4'he}:{row_cnt+7'd2,sti_cnt-3'd1,4'he};
+							res_addr<=last_row? {7'd1,sti_cnt,4'he}:sti_cnt? {row_cnt+7'd2,sti_cnt-3'd1,4'he}:0;
 						end
 					end
 				end
 			end
 			JOIN_BOTTOM:begin
-				if(`P(1,1)) begin
-					res_wr<=1;
-					`P(1,1)<=tmp;
-				end
-				res_addr<={row_cnt+1,sti_cnt,tmp_cnt}+1;
-				res_do<=minimum('{`P(2,1),`P(0,1),`P(1,1),`P(2,1),res_di})+1;
+				tmp=minimum('{`P(2,1)+1,`P(0,1)+1,`P(1,1)+1,`P(2,1)+1,`P(1,0)});
+				res_wr<=`P(1,0);
+				`P(1,0)<=`P(1,0)? tmp:0;
+				res_addr<={row_cnt,sti_cnt,tmp_cnt}-1;
+				res_do<=tmp;
 				res_rd<=0;
-				status<=(row_cnt)? JOIN_UP:CTRL;
+				status<=CTRL;
 			end
 			END: done<=1;
 		endcase
+		*/
 	end
 end
 endmodule
