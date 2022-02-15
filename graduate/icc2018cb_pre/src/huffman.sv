@@ -1,5 +1,5 @@
 module huffman(clk, reset, gray_valid, gray_data, CNT_valid, CNT1, CNT2, CNT3, CNT4, CNT5, CNT6,
-    code_valid, HC1, HC2, HC3, HC4, HC5, HC6, M1, M2, M3, M4, M5, M6,cnt,cnt2,cnt3);
+    code_valid, HC1, HC2, HC3, HC4, HC5, HC6, M1, M2, M3, M4, M5, M6);
 
 input clk;
 input reset;
@@ -41,7 +41,7 @@ assign CNT5=tree[4].cnt;
 assign CNT6=tree[5].cnt;
 
 enum {INPUT,FIND_MIN,GENERATE_TREE,GENERATE_CODE} status;
-output logic [3:0]cnt,cnt2,cnt3;
+logic [3:0]cnt,cnt2,cnt3;
 logic [3:0]i;
 logic ended;
 
