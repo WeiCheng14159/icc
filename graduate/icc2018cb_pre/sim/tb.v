@@ -2,7 +2,7 @@
 // version 0.91% move the section of initial $sdf_annotate
 `timescale 1ns/10ps
 `define CLK_period 10                // CLK period. DO NOT modify period
-`define SDFFILE "./huffman_syn.sdf"  // Modify your sdf file name
+`define SDFFILE "../syn/huffman_syn.sdf"  // Modify your sdf file name
 
 `define tb1
 
