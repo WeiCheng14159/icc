@@ -27,7 +27,7 @@ assign M5  =M[4]  ;
 assign M6  =M[5]  ;
 
 struct packed{
-	logic [3:0] left,right,parrent;
+	logic [3:0] parrent;
 	logic is_left;
 	logic [7:0] cnt;
 } tree[11];
@@ -55,7 +55,7 @@ always_ff @(posedge clk,posedge reset) begin
 		cnt3<=0;
 		HC <='{default: '0};
 		M  <='{default: '0};
-		for(i=0;i<11;++i) tree[i]<='{i,4'hf,4'hf,0,0};
+		for(i=0;i<11;++i) tree[i]<='{4'hf,0,0};
 		uncoded<='{default: '1};
 		min_1<=4'hf;
 		min_2<=4'hf;
@@ -102,7 +102,7 @@ always_ff @(posedge clk,posedge reset) begin
 			end
 			GENERATE_TREE: begin
 				// combine & create tree
-				tree[cnt]<='{uncoded[min_1],uncoded[min_2],4'hf,0,tree[uncoded[min_1]].cnt+tree[uncoded[min_2]].cnt};
+				tree[cnt]<='{4'hf,0,tree[uncoded[min_1]].cnt+tree[uncoded[min_2]].cnt};
 				tree[uncoded[min_1]].is_left<=1;
 				tree[uncoded[min_1]].parrent<=cnt;
 				tree[uncoded[min_2]].parrent<=cnt;
