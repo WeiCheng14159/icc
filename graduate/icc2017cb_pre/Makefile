@@ -114,7 +114,7 @@ ifdef TB
 	+access+r \
 	+define+FSDB_FILE=\"$(TOP).fsdb\" \
 	+define+SDF \
-	+define+SDFFILE=\"$(SYN_DIR)/$(TOP)_syn.sdf\"
+	+define+SDFFILE=\"$(SYN_DIR)/$(TOP)_syn.sdf\" \
 	+define+TB$(TB)
 else
 	@echo "Need specify TB=?"
