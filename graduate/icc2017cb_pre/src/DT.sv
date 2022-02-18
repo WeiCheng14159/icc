@@ -25,7 +25,7 @@ function [7:0] minimum;
 endfunction
 
 //logic [13:0]core_cnt;
-logic [1:0] tmp_cnt;
+logic [3:0] tmp_cnt;
 logic [2:0] sti_cnt;
 logic [6:0] row_cnt;
 logic req_cnt;
@@ -56,6 +56,7 @@ always_ff @(posedge clk,negedge reset) begin
 		row_cnt<=0;
 		sti_rd<=0;
 		req_cnt<=1;
+		req_cnt2<=0;
 		res_addr<=0;
 		res_wr<=0;
 		res_rd<=0;
@@ -76,7 +77,7 @@ always_ff @(posedge clk,negedge reset) begin
 			JOIN_UP:begin
 				res_wr<=`P(1,1);
 				res_addr<={row_cnt+7'd1,sti_cnt,tmp_cnt}-1;
-				res_di<=minimum(`P(0,0),`P(1,0),`P(2,0),`P(0,1))+1;
+				res_do<=minimum({`P(0,0),`P(1,0),`P(2,0),`P(0,1)})+1;
 				if(tmp_cnt==4'b1111) begin
 					if(sti_cnt==3'b111) begin
 						if(row_cnt==7'b1111101) begin
@@ -104,23 +105,27 @@ always_ff @(posedge clk,negedge reset) begin
 			end
 			JOIN_BOTTOM:begin
 				res_rd<=0;
-				res_wr<=(sti_tmp[1][0])!=0);
+				res_wr<=(sti_tmp[1][0]!=0);
 				res_addr<={row_cnt,sti_cnt,tmp_cnt}-1;
-				tmp=minimum(sti_tmp[0][1],sti_tmp[1][1],sti_tmp[2][1],sti_tmp[2][0])+1;
-				res_di<=tmp<sti_tmp[1][0]? tmp:sti_tmp[1][0];
+				tmp=minimum({sti_tmp[0][1],sti_tmp[1][1],sti_tmp[2][1],sti_tmp[2][0]})+1;
+				res_do<=tmp<sti_tmp[1][0]? tmp:sti_tmp[1][0];
 				status<=GET_RES_DATA;
 				//prepare next data
 				for(loop_cnt=0;loop_cnt<4;++loop_cnt) sti_tmp[loop_cnt[1]][loop_cnt[0]]<=sti_tmp[loop_cnt[1]][1+loop_cnt[0]];
-				{row_cnt,sti_cnt,tmp_cnt}<={row_cnt,sti_cnt,tmp_cnt}-(({sti_cnt,tmp_cnt}==7'b0000001)? 3:1);
-				{res_rd,req_cnt}<={0,1};
+				//{row_cnt,sti_cnt,tmp_cnt}<={row_cnt,sti_cnt,tmp_cnt}-(({sti_cnt,tmp_cnt}==7'b0000001)? 3:1);
+				{res_rd,req_cnt}<=2'b01;
 				req_cnt2<=({sti_cnt,tmp_cnt}==7'b0000001)? 3:1;
 			end
 			GET_RES_DATA:begin
 				if(res_rd) begin
 					sti_tmp[0][req_cnt]<=res_di;
 					if(req_cnt) begin 
-						if(req_cnt2) {row_cnt,sti_cnt,tmp_cnt}<={row_cnt,sti_cnt,tmp_cnt}-1;
+						if(req_cnt2) begin
+							if({row_cnt,sti_cnt,tmp_cnt}==14'b1111111) done<=1;
+							else {row_cnt,sti_cnt,tmp_cnt}<={row_cnt,sti_cnt,tmp_cnt}-1;
+						end
 						else status<=JOIN_BOTTOM;
+						req_cnt2<=req_cnt2-1;
 					end
 				end
 				res_rd<=1;
