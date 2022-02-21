@@ -12,7 +12,7 @@ NC_DIR             =$(ROOT_DIR)/conf
 TB_TOP             =testfixture
 TOP                =LBP
 
-SRC=$(filter-out $(SRC_DIR)/CHIP.v, $(bash ls $(SRC_DIR)/*.(sv|v)))
+SRC=$(filter-out $(SRC_DIR)/CHIP.v, $(shell ls $(SRC_DIR)/*.v $(SRC_DIR)/*.sv))
 
 TB_SRC=$(SIM_DIR)/*.dat
 
@@ -54,7 +54,7 @@ icc_init:
 
 # Generate header
 gen_def:
-	sh $(SRC_DIR)/gen_def.sh > $(SRC_DIR)/def.v; \
+	#sh $(SRC_DIR)/gen_def.sh > $(SRC_DIR)/def.v; \
 
 cp_tb_src: gen_hex
 	cd $(BUILD_DIR); \
