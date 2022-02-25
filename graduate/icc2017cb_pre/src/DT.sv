@@ -68,34 +68,30 @@ always_ff @(posedge clk,negedge reset) begin
 				res_rd<=1;
 				sti_rd<=1;
 				res_addr<={row_cnt,sti_cnt,tmp_cnt}+2;
-				sti_addr<={row_cnt+1,sti_cnt};
+				sti_addr<={row_cnt+1,sti_cnt}+((tmp_cnt==4'b1111)? 1:0);
 
 				// move reuse data
-				cache[0][1]<=cache[0][0];
-				cache[1][1]<=cache[1][0];
-				cache[0][2]<=cache[0][1];
-				cache[1][2]<=cache[1][1];
+				cache[0][0]<=cache[0][1];
+				cache[1][0]<=cache[1][1];
+				cache[0][1]<=((res_rd)? res_di:cache[0][2]);
+				cache[1][1]<=cache[1][2];
 				
 				// new line
 				if({sti_cnt,tmp_cnt}==7'b1111111) begin
 					status<=GET_DATA_UP;
 					{row_cnt,sti_cnt,tmp_cnt}<={row_cnt,sti_cnt,tmp_cnt}+1;
 				end
-				else begin
-					status<=JOIN_UP;
-					if(res_rd) cache[2][0]<=res_di;
-				end
+				else status<=JOIN_UP;
 			end
 			JOIN_UP:begin
 				res_rd<=0;
 				sti_rd<=0;
-				res_wr<=sti_di[tmp_cnt+1];
-				res_addr<={row_cnt+7'd1,sti_cnt,tmp_cnt}-1;
-				tmp=minimum({cache[0][0],cache[1][0],res_di,cache[0][1]})+1;
+				res_wr<=sti_di[4'd14-tmp_cnt];
+				res_addr<={row_cnt+7'd1,sti_cnt,tmp_cnt}+1;
+				tmp=minimum({cache[0][0],cache[0][1],res_di,cache[1][0]})+1;
 				res_do<=tmp;
-				cache[2][0]<=res_di;
-				cache[2][1]<=sti_di[tmp_cnt+1];
-				if(sti_di[tmp_cnt+1]) cache[1][1]<=tmp;
+				cache[0][2]<=res_di;
+				if(sti_di[4'd14-tmp_cnt]) cache[1][1]<=tmp;
 				{row_cnt,sti_cnt,tmp_cnt}<={row_cnt,sti_cnt,tmp_cnt}+(({sti_cnt,tmp_cnt}==7'b1111101)? 2:1);
 				status<=({row_cnt,sti_cnt,tmp_cnt}==14'b11111101111101)? JOIN_BOTTOM:GET_DATA_UP;
 			end
