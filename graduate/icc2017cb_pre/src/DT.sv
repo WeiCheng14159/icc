@@ -1,5 +1,3 @@
-`define P(a,b) sti_tmp[b][tmp_cnt+a]
-
 module DT(
 	input 			clk, 
 	input			reset,
@@ -30,10 +28,9 @@ logic [2:0] sti_cnt;
 logic [6:0] row_cnt;
 logic req_cnt;
 logic [3:0]req_cnt2;
-logic [7:0]sti_tmp[2][18],tmp;
+logic [7:0]cache[2][3],tmp;
 enum {GET_DATA_UP,JOIN_UP,JOIN_BOTTOM,GET_DATA_BOTTOM,END} status;
 int i;
-logic [1:0]loop_cnt;
 /*
 core(2*3):
 |0,0|1,0|2,0|
@@ -51,7 +48,7 @@ BOTTOM:
 always_ff @(posedge clk,negedge reset) begin
 	if(!reset) begin
 		done<=0;
-		tmp_cnt<=1;
+		tmp_cnt<=0;
 		sti_cnt<=0;
 		row_cnt<=0;
 		sti_rd<=0;
@@ -61,92 +58,76 @@ always_ff @(posedge clk,negedge reset) begin
 		res_wr<=0;
 		res_rd<=0;
 		res_do<=0;
-		sti_tmp<='{default:'0};
+		cache<='{default:'0};
 		status<=GET_DATA_UP;
 	end
 	else begin
 		case(status)
 			GET_DATA_UP:begin
 				res_wr<=0;
-				if(res_rd) begin
-					for(i=2;i<18;++i) sti_tmp[1][i]<={6'd0,sti_di[17-i]};
-					sti_tmp[0][2+req_cnt2]<=res_di;
-					req_cnt2<=req_cnt2-1;
-					res_addr<={row_cnt,sti_cnt,req_cnt2}-1;
-					if(!req_cnt2) begin
-						status<=JOIN_UP;
-						res_rd<=0;
-						sti_rd<=0;
-					end
+				res_rd<=1;
+				sti_rd<=1;
+				res_addr<={row_cnt,sti_cnt,tmp_cnt}+2;
+				sti_addr<={row_cnt+1,sti_cnt};
+
+				// move reuse data
+				cache[0][1]<=cache[0][0];
+				cache[1][1]<=cache[1][0];
+				cache[0][2]<=cache[0][1];
+				cache[1][2]<=cache[1][1];
+				
+				// new line
+				if({sti_cnt,tmp_cnt}==7'b1111111) begin
+					status<=GET_DATA_UP;
+					{row_cnt,sti_cnt,tmp_cnt}<={row_cnt,sti_cnt,tmp_cnt}+1;
 				end
 				else begin
-					res_rd<=1;
-					sti_rd<=1;
-					sti_tmp[0][0]<=row_cnt? sti_tmp[0][16]:0;
-					sti_tmp[1][0]<=row_cnt? sti_tmp[1][16]:0;
-					sti_tmp[0][1]<=row_cnt? sti_tmp[0][17]:0;
-					sti_tmp[1][1]<=row_cnt? sti_tmp[1][17]:0;
-					res_addr<={row_cnt,sti_cnt,req_cnt2};
+					status<=JOIN_UP;
+					if(res_rd) cache[2][0]<=res_di;
 				end
-				sti_addr<={row_cnt+1,sti_cnt};
 			end
 			JOIN_UP:begin
-				res_wr<=`P(1,1);
+				res_rd<=0;
+				sti_rd<=0;
+				res_wr<=sti_di[tmp_cnt+1];
 				res_addr<={row_cnt+7'd1,sti_cnt,tmp_cnt}-1;
-				tmp=minimum({`P(0,0),`P(1,0),`P(2,0),`P(0,1)})+1;
+				tmp=minimum({cache[0][0],cache[1][0],res_di,cache[0][1]})+1;
 				res_do<=tmp;
-				`P(1,1)<=(`P(1,1))? tmp:0;
-				if(tmp_cnt==4'b1111) begin
-					if(sti_cnt==3'b111) begin
-						if(row_cnt==7'b1111101) begin
-							for(loop_cnt=0;loop_cnt<3;++loop_cnt) begin
-								sti_tmp[0][loop_cnt]<=sti_tmp[0][15+loop_cnt];
-								sti_tmp[1][loop_cnt]<=sti_tmp[1][15+loop_cnt];
-							end
-							status<=JOIN_BOTTOM;
-						end
-						else begin
-							{row_cnt,sti_cnt,tmp_cnt}<={row_cnt,sti_cnt,tmp_cnt}+3;
-							status<=GET_DATA_UP;
-						end
-					end
-					else begin
-						{sti_cnt,tmp_cnt}<={sti_cnt,tmp_cnt}+1;
-						status<=GET_DATA_UP;
-					end
-					req_cnt2<=4'b1111;
-				end
-				else tmp_cnt<=tmp_cnt+1;
+				cache[2][0]<=res_di;
+				cache[2][1]<=sti_di[tmp_cnt+1];
+				if(sti_di[tmp_cnt+1]) cache[1][1]<=tmp;
+				{row_cnt,sti_cnt,tmp_cnt}<={row_cnt,sti_cnt,tmp_cnt}+(({sti_cnt,tmp_cnt}==7'b1111101)? 2:1);
+				status<=({row_cnt,sti_cnt,tmp_cnt}==14'b11111101111101)? JOIN_BOTTOM:GET_DATA_UP;
 			end
 			JOIN_BOTTOM:begin
 				res_rd<=0;
-				res_wr<=(sti_tmp[0][1]!=0);
+				res_wr<=(cache[0][1]!=0);
 				res_addr<={row_cnt,sti_cnt,tmp_cnt}-1;
-				tmp=minimum({sti_tmp[1][0],sti_tmp[1][1],sti_tmp[1][2],sti_tmp[0][2]})+1;
-				tmp=tmp<sti_tmp[0][1]? tmp:sti_tmp[0][1];
+				tmp=minimum({cache[1][0],cache[1][1],cache[1][2],cache[0][2]})+1;
+				tmp=tmp<cache[0][1]? tmp:cache[0][1];
 				res_do<=tmp;
-				sti_tmp[0][1]<=(sti_tmp[0][1])? tmp:0;
+				cache[0][1]<=(cache[0][1])? tmp:0;
 				status<=GET_DATA_BOTTOM;
 				//prepare next data
-				sti_tmp[0][0]<=0;
-				sti_tmp[1][0]<=0;
-				sti_tmp[0][1]<=sti_tmp[0][0];
-				sti_tmp[1][1]<=sti_tmp[1][0];
-				sti_tmp[0][2]<=sti_tmp[0][1];
-				sti_tmp[1][2]<=sti_tmp[1][1];
+				cache[0][0]<=0;
+				cache[1][0]<=0;
+				cache[0][1]<=cache[0][0];
+				cache[1][1]<=cache[1][0];
+				cache[0][2]<=cache[0][1];
+				cache[1][2]<=cache[1][1];
 				{res_rd,req_cnt}<=2'b01;
 				req_cnt2<=({sti_cnt,tmp_cnt}==7'd2)? 2:0;
 			end
 			GET_DATA_BOTTOM:begin
 				res_wr<=0;
 				if(res_rd) begin
-					sti_tmp[req_cnt][0]<=res_di;
+					cache[req_cnt][0]<=res_di;
 					if(req_cnt) begin 
 						if(req_cnt2) begin
-							sti_tmp[0][1]<=sti_tmp[0][0];
-							sti_tmp[0][2]<=sti_tmp[0][1];
-							sti_tmp[1][1]<=res_di;
-							sti_tmp[1][2]<=sti_tmp[1][1];
+							cache[0][1]<=cache[0][0];
+							cache[0][2]<=cache[0][1];
+							cache[1][1]<=res_di;
+							cache[1][2]<=cache[1][1];
 						end
 						else status<=JOIN_BOTTOM;
 						req_cnt2<=req_cnt2-1;
