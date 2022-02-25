@@ -1,5 +1,5 @@
 # Read all Files
-read_verilog huffman.v
+read_verilog huffman.sv
 current_design huffman
 link
 

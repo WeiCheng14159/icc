@@ -2,7 +2,7 @@
 // version 0.91% move the section of initial $sdf_annotate
 `timescale 1ns/10ps
 `define CLK_period 10                // CLK period. DO NOT modify period
-`define SDFFILE "./huffman_syn.sdf"  // Modify your sdf file name
+`define SDFFILE "../syn/huffman_syn.sdf"  // Modify your sdf file name
 
 `define tb1
 
@@ -62,10 +62,10 @@ wire [47:0] M_G, M_EXP;
   initial $sdf_annotate(`SDFFILE, u_huffman);
 `endif
 
-//initial begin
-//$fsdbDumpfile("huffman.fsdb");
-//$fsdbDumpvars;
-//end
+initial begin
+$fsdbDumpfile("huffman.fsdb");
+$fsdbDumpvars("+all");
+end
 
 
 huffman u_huffman(.clk(CLK), .reset(reset), .gray_valid(gray_valid), .gray_data(gray_data),

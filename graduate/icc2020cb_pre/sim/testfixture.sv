@@ -47,11 +47,11 @@ initial begin
    // $fsdbDumpMDA;
 end
 
-//initial begin
-//    $fsdbDumpfile("SME.fsdb");
-//    $fsdbDumpvars;
-//    $fsdbDumpMDA;
-//end
+initial begin
+    $fsdbDumpfile("SME.fsdb");
+    $fsdbDumpvars;
+    $fsdbDumpMDA;
+end
 
 initial begin
     $dumpfile("SME.vcd");

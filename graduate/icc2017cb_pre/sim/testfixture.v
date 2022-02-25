@@ -1,6 +1,6 @@
 `timescale 1ns/10ps
 `define CYCLE      10.0          	  // Modify your clock period here
-`define SDFFILE    "../SYN/DT_syn.sdf"	  // Modify your sdf file name
+`define SDFFILE    "../syn/DT_syn.sdf"	  // Modify your sdf file name
 `define End_CYCLE  100000000             // Modify cycle times once your design need more cycle times!
 
 `ifdef TB1
@@ -68,7 +68,7 @@ always begin #(`CYCLE/2) clk = ~clk; end
 initial begin
 	`ifdef FSDB
 		$fsdbDumpfile("DT.fsdb");
-		$fsdbDumpvars;
+		$fsdbDumpvars("+all");
 		$fsdbDumpMDA(u_sti_ROM.sti_M);
 		$fsdbDumpMDA(u_res_RAM.res_M);
 	`elsif VCD
