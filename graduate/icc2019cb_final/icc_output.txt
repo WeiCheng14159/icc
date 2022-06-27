@@ -1,0 +1,50 @@
+icc_shell> gui_start
+Information: Visibility is turned ON for cells and cell contents because the task is set to Block Implementation (GUI-026)
+icc_shell> cd build/
+icc_shell> source .synopsys_dc.setup
+Information: Variable 'hdlin_translate_off_skip_text' is obsolete and is being ignored. (INFO-100)
+Information: Variable 'hdlin_enable_presto_for_vhdl' is obsolete and is being ignored. (INFO-100)
+Information: Variable 'hdlin_enable_presto_for_vhdl' is obsolete and is being ignored. (INFO-100)
+Warning: Variable sh_enable_line_editing can be set only in .synopsys_dc.setup file. (CLE-04)
+Warning: Command line editor is already in emacs mode. (CLE-03)
+1
+icc_shell> create_mw_lib  -technology /usr/cad/lib/CBDK_IC_Contest_v2.1/Astro/tsmc13_CIC.tf -mw_reference_library {/usr/cad/lib/CBDK_IC_Contest_v2.1/Astro/tsmc13gfsg_fram} -bus_naming_style {[%d]}  -open  IOTDF
+Start to load technology file /usr/cad/lib/CBDK_IC_Contest_v2.1/Astro/tsmc13_CIC.tf.
+Warning: ContactCode 'CONT1' is missing the attribute 'unitMinResistance'. (line 839) (TFCHK-014)
+Warning: ContactCode 'CONT1' is missing the attribute 'unitNomResistance'. (line 839) (TFCHK-014)
+Warning: ContactCode 'CONT1' is missing the attribute 'unitMaxResistance'. (line 839) (TFCHK-014)
+Warning: Cut layer 'VIA12' has a non-cross primary default ContactCode 'via1'. (line 857) (TFCHK-092)
+Warning: Layer 'METAL1' has a pitch 0.41 that does not match the recommended wire-to-via pitch 0.365 or 0.405. (TFCHK-049)
+Warning: Layer 'METAL2' has a pitch 0.46 that does not match the recommended wire-to-via pitch 0.41 or 0.455. (TFCHK-049)
+Warning: Layer 'METAL4' has a pitch 0.46 that does not match the recommended wire-to-via pitch 0.41 or 0.455. (TFCHK-049)
+Warning: Layer 'METAL6' has a pitch 0.46 that does not match the recommended wire-to-via pitch 0.41 or 0.455. (TFCHK-049)
+Warning: Layer 'METAL7' has a pitch 0.41 that does not match the recommended wire-to-via pitch 0.54 or 0.5. (TFCHK-049)
+Warning: Layer 'METAL8' has a pitch 1 that does not match the recommended wire-to-via pitch 0.89. (TFCHK-049)
+Warning: Layer 'METAL3' has a pitch 0.41 that does not match the doubled pitch 0.82 or tripled pitch 1.23. (TFCHK-050)
+Warning: Layer 'METAL4' has a pitch 0.46 that does not match the doubled pitch 0.92 or tripled pitch 1.38. (TFCHK-050)
+Warning: Layer 'METAL5' has a pitch 0.41 that does not match the doubled pitch 0.82 or tripled pitch 1.23. (TFCHK-050)
+Warning: Layer 'METAL6' has a pitch 0.46 that does not match the doubled pitch 0.92 or tripled pitch 1.38. (TFCHK-050)
+Warning: Layer 'METAL7' has a pitch 0.41 that does not match the doubled pitch 0.82 or tripled pitch 1.23. (TFCHK-050)
+Warning: Layer 'METAL8' has a pitch 1 that does not match the doubled pitch 0.92 or tripled pitch 1.38. (TFCHK-050)
+Technology file /usr/cad/lib/CBDK_IC_Contest_v2.1/Astro/tsmc13_CIC.tf has been loaded successfully.
+{IOTDF}
+icc_shell> import_designs -format verilog -top top_module -cell top_module IOTDF_syn.v
+Error: Cannot read file 'IOTDF_syn.v'. (UID-58)
+Error: Current design is not defined. (UID-4)
+0
+icc_shell> ls
+.                   IOTDF_F6.fsdb   f1.dat            ncverilog.history
+..                  IOTDF_F7.fsdb   f2.dat            ncverilog.log
+.synopsys_dc.setup  IOTDF_autoread  f3.dat            novas.conf
+BSSLib.lib++        IOTDF_syn.ddc   f4.dat            novas.rc
+INCA_libs           IOTDF_syn.qor   f5.dat            novas_dump.log
+IOTDF               IOTDP_autoread  f6.dat            pattern1.dat
+IOTDF_F1.fsdb       IOTDP_syn.qor   f7.dat            signal.rc
+IOTDF_F2.fsdb       alib-52         filenames.log     timing.log
+IOTDF_F3.fsdb       area.log        huffman_autoread
+IOTDF_F4.fsdb       command.log     huffman_syn.qor
+IOTDF_F5.fsdb       default.svf     nWaveLog
+icc_shell> cp ../syn/IOTDF_syn.v .
+Error: extra positional option '../syn/IOTDF_syn.v' (CMD-012)
+Error: extra positional option '.' (CMD-012)
+icc_shell> 

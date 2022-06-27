@@ -1,0 +1,1 @@
+s1(27Jun2022:10:50:17):  ncverilog -v testfixture.v IOTDF_pr.v ../sim/tsmc13_neg.v +define+F1 +define+FSDB_FILE=IOTDF.fsdb +define+SDF +access+r 
