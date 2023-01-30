@@ -61,9 +61,8 @@ check:
 # Run RTL simulation
 rtl: $(BUILD) cp_tb_src
 	cd $(BUILD_DIR); \
-	ncverilog $(SIM_DIR)/$(TB_TOP).v $(SRC) \
+	irun $(SIM_DIR)/$(TB_TOP).v $(SRC) \
 	+incdir+$(SRC_DIR) \
-	+nc64bit \
 	+access+r \
 	+define+SHM_FILE=\"$(TOP).shm\" \
 	+define+FSDB_FILE=\"$(TOP).fsdb\"
@@ -97,8 +96,7 @@ autosyn: $(BUILD) syn_init
 pre: $(BUILD) cp_tb_src syn_init
 	cd $(BUILD_DIR); \
 	cp $(SYN_DIR)/$(TOP)_syn.sdf $(BUILD_DIR); \
-	ncverilog $(SIM_DIR)/$(TB_TOP).v $(SYN_DIR)/$(TOP)_syn.v -v $(SIM_DIR)/fsa0m_a_generic_core_21.lib.src \
-	+nc64bit \
+	irun $(SIM_DIR)/$(TB_TOP).v $(SYN_DIR)/$(TOP)_syn.v -v $(SIM_DIR)/fsa0m_a_generic_core_21.lib.src \
 	+access+r \
 	+define+SHM_FILE=\"$(TOP).shm\" \
 	+define+FSDB_FILE=\"$(TOP).fsdb\" \

@@ -9,12 +9,12 @@ REPORT_DIR         =$(ROOT_DIR)/report
 SV_DIR             =$(ROOT_DIR)/conf/simvision_conf
 NC_DIR             =$(ROOT_DIR)/conf/nWave_conf
 
-TB_TOP             =testfixture
-TOP                =geofence
+TB_TOP             =tb
+TOP                =JAM
 
 SRC=$(shell ls $(SRC_DIR)/*.v $(SRC_DIR)/*.sv)
 
-TB_SRC=$(SIM_DIR)/grad.data
+TB_SRC=$(SIM_DIR)/cost_rom
 
 .PHONY: default init check rtl nw sv syn syn_init autosyn post post_sv clean gen_def
 

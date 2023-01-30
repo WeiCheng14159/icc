@@ -17,7 +17,8 @@ SRC=$(filter-out $(SRC_DIR)/CHIP.v, $(shell ls $(SRC_DIR)/*.v $(SRC_DIR)/*.sv))
 TB_SRC=$(SIM_DIR)/*.dat
 
 # For IC contest
-CBDK_DIR         =/usr/cad/lib/CBDK_IC_Contest_v2.1/Verilog
+CBDK_DIR         =/usr/cad/designkit/CBDK_IC_Contest_v2.5/Verilog
+#/usr/cad/lib/CBDK_IC_Contest_v2.1/Verilog
 CORE_CELL        =tsmc13_neg.v
 IO_CELL          =
 
@@ -71,9 +72,8 @@ check:
 # Run RTL simulation
 rtl: $(BUILD) gen_def cp_tb_src
 	cd $(BUILD_DIR); \
-	ncverilog $(SIM_DIR)/$(TB_TOP).v $(SRC) \
+	irun $(SIM_DIR)/$(TB_TOP).v $(SRC) \
 	+incdir+$(SRC_DIR) \
-	+nc64bit \
 	+access+r \
 	+define+FSDB_FILE=\"$(TOP).fsdb\"
 
@@ -101,9 +101,8 @@ autosyn: $(BUILD) syn_init
 syn: $(BUILD) cp_tb_src syn_init
 	cd $(BUILD_DIR); \
 	cp $(SYN_DIR)/$(TOP)_syn.sdf $(BUILD_DIR); \
-	ncverilog $(SIM_DIR)/$(TB_TOP).v $(SYN_DIR)/$(TOP)_syn.v \
+	irun $(SIM_DIR)/$(TB_TOP).v $(SYN_DIR)/$(TOP)_syn.v \
 	-v $(CBDK_DIR)/$(CORE_CELL) \
-	+nc64bit \
 	+access+r \
 	+define+FSDB_FILE=\"$(TOP).fsdb\" \
 	+define+SDF \
