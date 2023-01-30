@@ -1,6 +1,6 @@
 set company "CIC"
 set designer "Student"
-set search_path      "/usr/cad/CBDK/CBDK018_UMC_Faraday_v1.0/CIC/SynopsysDC/db/  $search_path"
+set search_path      "/usr/cad/designkit/CBDK018_UMC_Faraday_v1.1/CIC/SynopsysDC/db/  $search_path"
 set target_library   "fsa0m_a_generic_core_ss1p62v125c.db \
                       fsa0m_a_generic_core_ff1p98vm40c.db \
                       fsa0m_a_t33_generic_io_ss1p62v125c.db \
