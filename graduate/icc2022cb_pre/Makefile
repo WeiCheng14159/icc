@@ -55,13 +55,18 @@ check:
 	jg -superlint $(SCRIPT_DIR)/superlint.tcl &
 
 # Run RTL simulation
-rtl: $(BUILD) gen_def cp_tb_src
+rtl: $(BUILD) cp_tb_src
+ifdef P
 	cd $(BUILD_DIR); \
 	irun -sv $(SIM_DIR)/tb.sv $(SRC) \
 	+incdir+$(SRC_DIR) \
 	+access+r \
 	+define+SHM_FILE=\"$(TOP).shm\" \
 	+define+FSDB_FILE=\"$(TOP).fsdb\"
+	+define+P$(P)
+else
+	@echo "need specify P=?"
+endif
 
 # View waveform using nWave
 nw: $(BUILD)

@@ -19,7 +19,7 @@ enum {INIT,CALC,DONE}status;
 
 logic [3:0]temp; // for macro
 
-logic [2:0]swap_point,min_point;
+logic [2:0]swap_point,min_point,pw,pj;
 logic [3:0]i,j;
 logic [9:0]tmp_cost;
 
@@ -29,6 +29,8 @@ always_ff@(posedge CLK,posedge RST) begin
 		cost<='{default: '0};
 		W<=3'd7;
 		J<=3'd7;
+		pw<=3'd7;
+		pj<=3'd7;
 		MatchCount<=4'd0;
 		MinCost<={10{1'b1}};
 		Valid<=1'b0;
@@ -39,15 +41,18 @@ always_ff@(posedge CLK,posedge RST) begin
 				if(!W) begin
 					if(!J) status<=CALC;
 					else J<=J-3'd1;
+					W<=3'd7;
 				end
 				else W<=W-3'd1;
-				cost[W][J]<=Cost;
+				pw<=W;
+				pj<=J;
+				cost[pw][pj]<=Cost;
 			end
 			CALC: begin
 				//swap
-				for(int i=0;i<8;++i) new_order[i]=order[i];
+				for(i=0;i<8;++i) new_order[i]=order[i];
 				swap_point=0;
-				for(i=8;i;--i) begin
+				for(i=7;i;--i) begin
 					if(order[i]>order[i-1]) begin
 						swap_point=i;
 						break;
@@ -58,13 +63,13 @@ always_ff@(posedge CLK,posedge RST) begin
 				end
 				`SWAP(new_order[j],new_order[swap_point-1]);
 				for(i=swap_point,j=7;i<j;++i,--j) begin
-					`SWAP(order[i],order[j])
+					`SWAP(new_order[i],new_order[j])
 				end
 				for(i=0;i<8;++i) order[i]<=new_order[i];
 				if(!swap_point) status<=DONE;
 				//calc
 				tmp_cost=0;
-				for(i=0;i<8;++i) tmp_cost=tmp_cost+order[i];
+				for(i=0;i<8;++i) tmp_cost=tmp_cost+cost[i][order[i]];
 				if(tmp_cost<MinCost) begin
 					MinCost<=tmp_cost;
 					MatchCount<=4'd1;
