@@ -27,8 +27,8 @@ always_ff@(posedge CLK,posedge RST) begin
 	if(RST) begin
 		for(i=0;i<8;++i) order[i]<=i;
 		cost<='{default: '0};
-		W<=3'd0;
-		J<=3'd0;
+		W<=3'd7;
+		J<=3'd7;
 		MatchCount<=4'd0;
 		MinCost<={10{1'b1}};
 		Valid<=1'b0;
@@ -36,11 +36,11 @@ always_ff@(posedge CLK,posedge RST) begin
 	else begin
 		case(status)
 			INIT: begin
-				if(W==4'd8) begin
-					if(J==4'd8) status<=CALC;
-					else J<=J+3'd1;
+				if(!W) begin
+					if(!J) status<=CALC;
+					else J<=J-3'd1;
 				end
-				else W<=W+3'd1;
+				else W<=W-3'd1;
 				cost[W][J]<=Cost;
 			end
 			CALC: begin
