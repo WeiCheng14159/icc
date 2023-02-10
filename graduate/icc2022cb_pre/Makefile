@@ -62,7 +62,7 @@ ifdef P
 	+incdir+$(SRC_DIR) \
 	+access+r \
 	+define+SHM_FILE=\"$(TOP).shm\" \
-	+define+FSDB_FILE=\"$(TOP).fsdb\"
+	+define+FSDB_FILE=\"$(TOP).fsdb\" \
 	+define+P$(P)
 else
 	@echo "need specify P=?"
@@ -93,6 +93,7 @@ autosyn: $(BUILD) syn_init
 
 # Run gate-level simulation (nWave)
 post: $(BUILD) cp_tb_src syn_init
+ifdef P
 	cd $(BUILD_DIR); \
 	cp $(SYN_DIR)/$(TOP)_syn.sdf $(BUILD_DIR); \
 	irun +sv $(SIM_DIR)/tb.sv $(SYN_DIR)/$(TOP)_syn.v -v $(SIM_DIR)/tsmc13_neg.v \
@@ -100,7 +101,11 @@ post: $(BUILD) cp_tb_src syn_init
 	+define+SHM_FILE=\"$(TOP).shm\" \
 	+define+FSDB_FILE=\"$(TOP).fsdb\" \
 	+define+SDF \
-	+define+SDFFILE=\"$(SYN_DIR)/$(TOP)_syn.sdf\"
+	+define+SDFFILE=\"$(SYN_DIR)/$(TOP)_syn.sdf\" \
+	+define+P$(P)
+else
+	@echo "need specify P=?"
+endif
 
 # View waveform using simvision
 post_sv: $(BUILD)

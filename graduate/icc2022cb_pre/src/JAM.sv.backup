@@ -1,0 +1,157 @@
+//`define SWAP(a,b) \
+	//      temp=a;\
+	//      a=b;\
+	//      b=temp;
+
+//err:no array of port
+module add #(parameter WIDTH=32,SIZE=2)(
+	input [WIDTH*SIZE-1:0] data,
+	output [WIDTH+$clog2(SIZE)-1:0] add_sum
+);
+generate
+case(SIZE)
+	1:assign add_sum=data[WIDTH-1:0];
+	2:assign add_sum=data[WIDTH+:7]+data[0+:7];
+	default: begin
+		logic [WIDTH+$clog2(SIZE/2)-1:0]r1;
+		add #(.WIDTH (WIDTH),.SIZE(SIZE/2))
+		right(.data(data[WIDTH*(SIZE/2)-1:0]),.add_sum(r1));
+
+		logic [WIDTH+$clog2(SIZE-SIZE/2)-1:0]r2;
+		add #(.WIDTH (WIDTH),.SIZE(SIZE-SIZE/2))
+		left(.data(data[WIDTH*SIZE-1:WIDTH*(SIZE/2)]),.add_sum(r2));
+
+		assign add_sum=r1+r2;
+	end
+endcase
+endgenerate
+endmodule
+
+//module extract #(parameter WIDTH=3,SIZE=8)(
+//      input [SIZE-1:0]hot_index,
+//      input [WIDTH-1:0]array[SIZE],
+//      output logic [WIDTH-1:0]element
+//);
+//logic [WIDTH-1:0]filtered[SIZE];
+//always_comb begin
+//      for(int i=0;i<SIZE;++i) filtered[i]=hot_index[i]? array[i]:0;
+//      element=filtered.or();
+//end
+//endmodule
+
+
+
+module JAM (
+	input CLK,
+	input RST,
+	output logic [2:0] W,
+	output logic [2:0] J,
+	input [6:0] Cost,
+	output logic [3:0] MatchCount,
+	output logic [9:0] MinCost,
+	output logic Valid
+);
+
+logic [6:0]cost[8][8],cmp;
+logic [7*8-1:0]cur_cost;
+logic [7:0]swap_point,larger_point;
+logic [2:0]order[8],new_order[8],sp_number,lp_number;
+enum {INIT,CALC,DONE}status;
+
+logic [2:0]pw,pj;
+
+logic [9:0]cur_sum;
+
+//extract spe(.hot_index(swap_point),.array(order),.element(sp_number));
+add #(.WIDTH(7),.SIZE(8)) cost_adder (.data(cur_cost),.add_sum(cur_sum));
+always_comb begin
+	for(int i=0;i<8;++i) cur_cost[7*i+:7]=cost[i][order[i]];
+	//find swap point
+	swap_point[0]=1'b0;
+	for(int i=0;i<7;++i) cmp[i]=(order[i+1]<order[i]);
+	swap_point={cmp&(-cmp),1'b0};//rightest set bit=swap_point
+	unique case(1'b1)
+		swap_point[1]:sp_number=order[1];
+		swap_point[2]:sp_number=order[2];
+		swap_point[3]:sp_number=order[3];
+		swap_point[4]:sp_number=order[4];
+		swap_point[5]:sp_number=order[5];
+		swap_point[6]:sp_number=order[6];
+		swap_point[7]:sp_number=order[7];
+	endcase
+	//find min number > swap point number on right side of swap point
+	lp_number=3'b111;
+	larger_point=1;
+	for(int i=0;i<7;++i) begin
+		if((($unsigned($signed(8'b10000000)>>>i)&swap_point)!=8'd0)&&(order[6-i]>sp_number)&&lp_number>=(order[6-i])) begin
+			larger_point=8'd1<<(6-i);
+			lp_number=order[6-i];
+		end
+	end
+	//swap
+	for(int i=0;i<8;++i) begin
+		if(swap_point[i]|larger_point[i]) new_order[i]=(swap_point[i])? lp_number:sp_number;
+		else new_order[i]=order[i];
+	end
+end
+
+always_ff@(posedge CLK,posedge RST) begin
+	if(RST) begin
+		for(int i=0;i<8;++i) order[i]<=3'd7-i;
+		cost<='{default: 0};
+		W<=3'd7;
+		J<=3'd7;
+		pw<=3'd7;
+		pj<=3'd7;
+		MatchCount<=4'd0;
+		MinCost<={10{1'b1}};
+		Valid<=1'b0;
+		status<=INIT;
+	end
+	else begin
+		unique case(status)
+			INIT: begin
+				if(!W) begin
+					if(J) J<=J-3'd1;
+					W<=3'd7;
+				end
+				else W<=W-3'd1;
+				pw<=W;
+				pj<=J;
+				if(!{pw,pj}) status<=CALC;
+				cost[pw][pj]<=Cost;
+			end
+			CALC: begin
+				//calc job
+				if(cur_sum<MinCost) begin
+					MinCost<=cur_sum;
+					MatchCount<=1;
+				end
+				else if(cur_sum==MinCost) MatchCount<=MatchCount+1;
+				if(cmp==8'd0) status<=DONE;
+				//reverse right side of swap point
+				unique case(1'b1)
+					////generate
+					////for(int i=0;i<7;++i) begin
+					////    swap_point[i]: {>>3{order}}<={new_order[7:i+1],{<<3{new_order[i:0]}}};
+					////end
+					////endgenerate
+					swap_point[1]: order<='{new_order[0],new_order[1],new_order[2],new_order[3],new_order[4],new_order[5],new_order[6],new_order[7]};
+					swap_point[2]: order<='{new_order[1],new_order[0],new_order[2],new_order[3],new_order[4],new_order[5],new_order[6],new_order[7]};
+					swap_point[3]: order<='{new_order[2],new_order[1],new_order[0],new_order[3],new_order[4],new_order[5],new_order[6],new_order[7]};
+					swap_point[4]: order<='{new_order[3],new_order[2],new_order[1],new_order[0],new_order[4],new_order[5],new_order[6],new_order[7]};
+					swap_point[5]: order<='{new_order[4],new_order[3],new_order[2],new_order[1],new_order[0],new_order[5],new_order[6],new_order[7]};
+					swap_point[6]: order<='{new_order[5],new_order[4],new_order[3],new_order[2],new_order[1],new_order[0],new_order[6],new_order[7]};
+					swap_point[7]: order<='{new_order[6],new_order[5],new_order[4],new_order[3],new_order[2],new_order[1],new_order[0],new_order[7]};
+					//swap_point[2]: {>>3{order}}={new_order[7:2],new_order[0:1]};
+				endcase
+			end
+			default: begin
+				Valid<=1;
+			end
+		endcase
+	end
+end
+
+
+endmodule
