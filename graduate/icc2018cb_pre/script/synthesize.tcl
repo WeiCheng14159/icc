@@ -2,7 +2,7 @@
 set_host_options -max_cores 16
 
 # Read all Files
-set top huffman
+set top JAM
 #read_verilog ../src/${top}.v
 read_file -autoread -top ${top} -recursive {../src} -library ${top}
 current_design ${top}
@@ -12,7 +12,7 @@ link
 source -echo -verbose ../script/${top}.sdc
 
 # High fanout threshold
-# set high_fanout_net_threshold 0
+set high_fanout_net_threshold 0
 report_net_fanout -high_fanout
 
 uniquify
@@ -23,8 +23,11 @@ set_structure -timing true
 check_design
 
 # Synthesize (ultimate)
-compile_ultra -no_autoungroup -no_boundary_optimization -retime -gate_clock
-compile_ultra -incremental
+#compile_ultra -no_autoungroup -no_boundary_optimization -retime -gate_clock
+#compile_ultra -incremental
+compile -map_effort high -area_effort high -no_autoungroup -no_boundary_optimization
+compile -map_effort high -area_effort high -inc
+compile_ultra
 
 current_design [get_designs ${top}]
  
