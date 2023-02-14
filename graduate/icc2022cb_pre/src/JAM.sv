@@ -83,7 +83,7 @@ always_ff@(posedge CLK,posedge RST) begin
 	end
 	else begin
 		for(int i=1;i<3;++i) status_e[i]<=status_e[i-1];
-		case(status_e[0])
+		unique case(status_e[0])
 			CALC: begin
 				cnt<=cnt+3'd1;
 				if(cnt==3'd7) status_e[0]<=CHECK;
