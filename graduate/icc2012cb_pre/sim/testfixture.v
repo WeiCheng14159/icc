@@ -1,6 +1,6 @@
 `timescale 1ns/1ns
 
-`define CYCLE 20
+`define CYCLE 14
 `define SDFFILE  "NFC_syn.sdf"
 `include "./flash_a.v"
 `include "./flash_b.v"

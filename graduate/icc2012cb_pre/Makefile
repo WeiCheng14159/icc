@@ -14,7 +14,7 @@ TOP                =NFC
 
 SRC=$(shell ls $(SRC_DIR)/*.v $(SRC_DIR)/*.sv)
 
-TB_SRC=$(SIM_DIR)/grad.data
+TB_SRC=$(SIM_DIR)/*.dat
 
 .PHONY: default init check rtl nw sv syn syn_init autosyn post post_sv clean gen_def
 
@@ -44,11 +44,11 @@ syn_init:
 
 # Generate header
 gen_def:
-	sh $(SRC_DIR)/gen_def.sh > $(SRC_DIR)/def.v
+	#sh $(SRC_DIR)/gen_def.sh > $(SRC_DIR)/def.v
 
 cp_tb_src:
 	cd $(BUILD_DIR); \
-	cp $(TB_SRC) .;
+		cp $(TB_SRC) .;
 
 # Check HDL syntax
 check:
@@ -56,58 +56,73 @@ check:
 
 # Run RTL simulation
 rtl: $(BUILD) gen_def cp_tb_src
+ifdef p
 	cd $(BUILD_DIR); \
-	irun -sv $(SIM_DIR)/tb.sv $(SRC) \
-	+incdir+$(SRC_DIR) \
-	+access+r \
-	+define+SHM_FILE=\"$(TOP).shm\" \
-	+define+FSDB_FILE=\"$(TOP).fsdb\"
+		irun -sv $(SIM_DIR)/$(TB_TOP).v $(SRC) \
+		+incdir+$(SRC_DIR) \
+		+incdir+$(SIM_DIR) \
+		+access+r \
+		+define+SHM_FILE=\"$(TOP).shm\" \
+		+define+FSDB_FILE=\"$(TOP).fsdb\" \
+		+define+FSDB \
+		+define+p$(p)
+else
+	@echo "need specify p=?"
+endif
 
 # View waveform using nWave
 nw: $(BUILD)
 	cp $(NC_DIR)/signal.rc $(BUILD_DIR); \
-	cd $(BUILD_DIR); \
-	nWave -f $(TOP).fsdb -sswr $(NC_DIR)/signal.rc +access+r +nc64bit &
+		cd $(BUILD_DIR); \
+		nWave -f $(TOP).fsdb -sswr $(NC_DIR)/signal.rc +access+r +nc64bit &
 
 # View waveform using simvision
 sv: $(BUILD)
 	cd $(BUILD_DIR); \
-	simvision -64bit -waves -input $(SV_DIR)/rtl.sv &
+		simvision -64bit -waves -input $(SV_DIR)/rtl.sv &
 
 # Run synthesize with Design Compiler
 syn: $(BUILD) syn_init
 	cd $(BUILD_DIR); \
-	cp $(SCRIPT_DIR)/synopsys_dc.setup $(BUILD_DIR)/.synopsys_dc.setup; \
-	dcnxt_shell -f $(SCRIPT_DIR)/synthesize.tcl;
+		cp $(SCRIPT_DIR)/synopsys_dc.setup $(BUILD_DIR)/.synopsys_dc.setup; \
+		dcnxt_shell -f $(SCRIPT_DIR)/synthesize.tcl;
 
 # Auto run synthesize with Design Compiler
 autosyn: $(BUILD) syn_init
 	cd $(BUILD_DIR); \
-	cp $(SCRIPT_DIR)/synopsys_dc.setup $(BUILD_DIR)/.synopsys_dc.setup; \
-	nohup dcnxt_shell -f $(SCRIPT_DIR)/synthesize.tcl &> $(ROOT_DIR)/nohup.log &
+		cp $(SCRIPT_DIR)/synopsys_dc.setup $(BUILD_DIR)/.synopsys_dc.setup; \
+		nohup dcnxt_shell -f $(SCRIPT_DIR)/synthesize.tcl &> $(ROOT_DIR)/nohup.log &
 
 # Run gate-level simulation (nWave)
 post: $(BUILD) cp_tb_src syn_init
+ifdef p
 	cd $(BUILD_DIR); \
-	cp $(SYN_DIR)/$(TOP)_syn.sdf $(BUILD_DIR); \
-	irun +sv $(SIM_DIR)/tb.sv $(SYN_DIR)/$(TOP)_syn.v -v $(SIM_DIR)/tsmc13_neg.v \
-	+access+r \
-	+define+SHM_FILE=\"$(TOP).shm\" \
-	+define+FSDB_FILE=\"$(TOP).fsdb\" \
-	+define+SDF \
-	+define+SDFFILE=\"$(SYN_DIR)/$(TOP)_syn.sdf\"
+		cp $(SYN_DIR)/$(TOP)_syn.sdf $(BUILD_DIR); \
+		irun +sv $(SIM_DIR)/$(TB_TOP).v $(SYN_DIR)/$(TOP)_syn.v -v $(SIM_DIR)/tsmc13_neg.v \
+		+incdir+$(SIM_DIR) \
+		+access+r \
+		+define+SHM_FILE=\"$(TOP).shm\" \
+		+define+FSDB_FILE=\"$(TOP).fsdb\" \
+		+define+SDF \
+		+define+FSDB \
+		+define+SDFFILE=\"$(SYN_DIR)/$(TOP)_syn.sdf\" \
+		+define+p$(p)
+else
+	@echo "need specify p=?"
+endif
 
 # View waveform using simvision
 post_sv: $(BUILD)
 	cd $(BUILD_DIR); \
-	simvision -64bit -waves -input $(SV_DIR)/post.sv &
+		simvision -64bit -waves -input $(SV_DIR)/post.sv &
 
 # Run ICC APR flow
 apr: syn_init
 	cp $(SYN_DIR)/$(TOP)_syn.v $(APR_DIR)/design_data/CHIP_syn.v
-		cp $(SCRIPT_DIR)/$(TOP)_APR.sdc $(APR_DIR)/design_data/CHIP.sdc
+	cp $(SCRIPT_DIR)/$(TOP)_APR.sdc $(APR_DIR)/design_data/CHIP.sdc
 
 # Remove all files
 clean:
 	rm -rf $(BUILD_DIR) $(SYN_DIR) $(REPORT_DIR) *.log
+
 
