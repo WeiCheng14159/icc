@@ -1,5 +1,5 @@
 `timescale 1ns/10ps
-`define CYCLE    80           	        // Modify your clock period here
+`define CYCLE    10           	        // Modify your clock period here
 
 
 `define SDFFILE  "./lcd_ctrl_syn.sdf"	// Modify your sdf file name
@@ -62,7 +62,7 @@ reg   [2:0]   cmd_mem   [0:CMD_N_PAT-1];
 	IRB  IRB_1 (.Q(), .CLK(clk), .CEN(1'b0), .WEN(IRB_RW), .A(IRB_A), .D(IRB_D));
 
 
-//initial $sdf_annotate(`SDFFILE, top);
+initial $sdf_annotate(`SDFFILE, top);
 initial	$readmemh (`CMD,    cmd_mem);
 initial	$readmemh (`EXPECT, out_mem);
 

@@ -58,14 +58,6 @@ logic [2:0]step_cnt;
 localparam logic [1:0] mx_step[6]={0,2,0,1,3,1};
 localparam logic [1:0] my_step[6]={0,1,0,2,3,2};
 localparam logic [1:0] avg_step[8]={0,1,2,3,0,1,2,3};
-//always_comb begin
-//      case(1'b1)
-//              cmd_cache[AVG]: rw_addr='{op.y+avg_step[step_cnt][1],op.x+avg_step[step_cnt][0]};
-//              cmd_cache[MX]: rw_addr='{op.y+mx_step[step_cnt][1],op.x+mx_step[step_cnt][0]};
-//              cmd_cache[MY]: rw_addr='{op.y+my_step[step_cnt][1],op.x+my_step[step_cnt][0]};
-//              default: rw_addr=6'dx;
-//      endcase
-//end
 
 always_ff@(posedge clk,posedge reset) begin
 	if(reset) begin
