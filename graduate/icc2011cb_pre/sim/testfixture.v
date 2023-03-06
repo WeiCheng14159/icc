@@ -1,5 +1,5 @@
 `timescale 1ns/10ps
-`define CYCLE    100           	        // Modify your clock period here
+`define CYCLE    80           	        // Modify your clock period here
 
 
 `define SDFFILE  "./lcd_ctrl_syn.sdf"	// Modify your sdf file name

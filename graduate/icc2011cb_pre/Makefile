@@ -10,7 +10,7 @@ SV_DIR             =$(ROOT_DIR)/conf/simvision_conf
 NC_DIR             =$(ROOT_DIR)/conf/nWave_conf
 
 TB_TOP             =testfixture
-TOP                =lcd_ctrl
+TOP                =LCD_CTRL
 
 SRC=$(shell ls $(SRC_DIR)/*.v $(SRC_DIR)/*.sv)
 
@@ -65,9 +65,10 @@ ifdef tb
 		+define+SHM_FILE=\"$(TOP).shm\" \
 		+define+FSDB_FILE=\"$(TOP).fsdb\" \
 		+define+FSDB \
+		+notimingchecks \
 		+define+tb$(tb)
 else
-	@echo "need specify p=?"
+	@echo "need specify tb=?"
 endif
 
 # View waveform using nWave
