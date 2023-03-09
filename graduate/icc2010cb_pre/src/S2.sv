@@ -17,43 +17,73 @@ module S2(clk,
   inout sen,sd;
         
 
-logic [3:0]read_addr,write_addr;
-logic [4:0]read_cnt;
+logic [4:0]read_cnt[2];
+logic [3:0]output_cnt;//(addr:5,data:8)
+logic [20:0]recv_data;
+logic final_recv;
+
+//mem_ctl
+assign RB1_D=recv_data[17:0];
+always_comb begin
+	if(updown) RB1_A=recv_data[20:18];
+	else RB1_A=output_cnt-1;
+end
+always_ff(@posedge clk,posedge rst) begin
+	if(rst) begin
+		read_cnt<={3'd7,3'd7};
+		final_recv<=0;
+		RB1_RW<=1;
+	end
+	else begin
+		if(updown) begin //receive
+			if(sen) begin
+				RB1_RW<=0;
+				final_recv<=!RB1_A;
+			end
+			else RB1_RW<=1;
+		end
+		else begin//transmit
+			RB1_RW<=1;
+			if(!output_cnt) begin
+				if(!read_cnt[0]) begin
+					read_cnt<='{{read_cnt[0]-1},{read_cnt[0]-1}};
+				end
+			end
+			else begin
+				read_cnt[1]<=read_cnt[1]<<1;
+			end
+		end
+	end
+end
 
 //transmit ctl
 
-assign sen=(transmiting)? 1'b0:1'bz;
-assign sd=(transmiting)? RB2_Q[read_cnt]:1'bz;////
-assign RB2_A=(addr_read)? write_addr:read_addr;
+always_comb begin
+	if(updown) begin
+		sd=1'bz;
+		sen=1'bz;
+	end
+	else begin
+		sd=(output_cnt<10)? RB1_Q[read_cnt[0]]:read_cnt[1][2];
+		sen=(!output_cnt);
+	end
+end
 
 always_ff@(posedge clk,posedge rst) begin
 	if(rst) begin
-		transmiting<=0;
-		read_addr<=7;
-		write_addr<=~5'd0;
-		addr_read<=0;
+		output_cnt<=4'd14;
 	end
 	else begin
-		priority case(1'b0)
-			sen: begin //receive
-				RB2_RW<=1;
-				transmiting<=0;
-				RB2_D<={RB2_D[1:7],sd};//////
-				addr_read<=0;
-			end
-			transmiting: begin // not transmitting 
-				if(addr_read&&read_cnt<18) begin
-					transmiting<=1;
-					read_cnt<=read_cnt+1;
-					read_addr<=7;
+		if(updown) begin//receive
+			if(!sen) recv_data<={recv_data[19:0],sd};
+		end
+		else begin//transmit
+			if(!output_cnt) begin
+				if(~read_cnt[0]) begin
+					output_cnt<=4'd14;
 				end
-				RB2_RW<=addr_read;
-				addr_read<=1;
 			end
-			default: begin //transmiting
-				{transmiting,read_addr}<={transmiting,read_addr}-1;
-			end
-		endcase
+			else output_cnt<=output_cnt-1;
+		end
 	end
 end
-endmodule
