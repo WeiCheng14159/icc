@@ -10,7 +10,7 @@ SV_DIR             =$(ROOT_DIR)/conf/simvision_conf
 NC_DIR             =$(ROOT_DIR)/conf/nWave_conf
 
 TB_TOP             =testfixture
-TOP                =S
+TOP                =SI
 
 SRC=$(shell ls $(SRC_DIR)/*.v $(SRC_DIR)/*.sv)
 
@@ -103,7 +103,7 @@ post: $(BUILD) cp_tb_src syn_init
 ifdef tb
 	cd $(BUILD_DIR); \
 		cp $(SYN_DIR)/*.sdf $(BUILD_DIR); \
-		irun +sv $(SIM_DIR)/$(TB_TOP).v $(SYN_DIR)/$(TOP)_syn.v -v $(SIM_DIR)/tsmc13_neg.v \
+		irun +sv $(SIM_DIR)/$(TB_TOP).v $(SYN_DIR)/*.v -v $(SIM_DIR)/tsmc13_neg.v \
 		+incdir+$(SIM_DIR) \
 		+access+r \
 		+define+SHM_FILE=\"$(TOP).shm\" \
